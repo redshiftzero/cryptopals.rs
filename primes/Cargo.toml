@@ -1,0 +1,10 @@
+[package]
+name = "primes"
+version = "0.1.0"
+authors = ["redshiftzero <jen@freedom.press>"]
+edition = "2018"
+
+[dependencies]
+num-bigint = {version = "0.3.0", features = ["rand"] }
+rand = "0.7.3"
+lazy_static = "1.4.0"
