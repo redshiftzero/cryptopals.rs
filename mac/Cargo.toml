@@ -1,0 +1,8 @@
+[package]
+name = "mac"
+version = "0.1.0"
+authors = ["redshiftzero <jen@freedom.press>"]
+edition = "2018"
+
+[dependencies]
+sha-1 = "0.9.1"
