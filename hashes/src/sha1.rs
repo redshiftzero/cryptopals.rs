@@ -114,6 +114,20 @@ impl Sha1 {
         }
     }
 
+    /// For attack purposes
+    pub fn set_len(&mut self, len: u64) {
+        self.len = len;
+    }
+
+    /// For attack purposes
+    pub fn new_state(state: [u32; STATE_LEN]) -> Sha1 {
+        Sha1 {
+            state,
+            blocks: Vec::with_capacity(256),
+            len: 0,
+        }
+    }
+
     /// Resets the Sha1 struct to the starting state.
     pub fn reset(&mut self) {
         self.state = H;
