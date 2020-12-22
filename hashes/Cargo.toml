@@ -1,8 +1,5 @@
 [package]
-name = "mac"
+name = "hashes"
 version = "0.1.0"
 authors = ["redshiftzero <jen@freedom.press>"]
 edition = "2018"
-
-[dependencies]
-hashes = { path = "../hashes" }

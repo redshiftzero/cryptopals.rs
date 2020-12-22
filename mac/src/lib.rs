@@ -1,4 +1,4 @@
-use sha1::{Sha1, Digest};
+use hashes::Sha1;
 
 const HASH_LEN: usize = 20;
 
@@ -24,21 +24,21 @@ macro_rules! slice_as_array_ref {
 }
 
 
-fn gen_keyed_mac(key: &[u8], message: &[u8]) -> [u8; 20] {
+pub fn gen_keyed_mac(key: &[u8], message: &[u8]) -> [u8; 20] {
     let mut hasher = Sha1::new();
 
     let content = [key, message].concat();
 
-    hasher.update(content);
+    hasher.update(&content);
 
-    let result = hasher.finalize();
+    let result = hasher.bytes();
 
     let mac = slice_as_array_ref!(&result[..], HASH_LEN);
     *mac.unwrap()
 }
 
 
-fn verify_keyed_mac(key: &[u8], message: &[u8], mac: &[u8]) -> bool {
+pub fn verify_keyed_mac(key: &[u8], message: &[u8], mac: &[u8]) -> bool {
     let test_mac = gen_keyed_mac(key, message);
 
     // We don't return during this loop (waiting instead until we compare
