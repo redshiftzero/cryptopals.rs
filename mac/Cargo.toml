@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 hashes = { path = "../hashes" }
+digest = "0.9"

@@ -3,3 +3,8 @@ name = "hashes"
 version = "0.1.0"
 authors = ["redshiftzero <jen@freedom.press>"]
 edition = "2018"
+
+[dependencies]
+digest = "0.9"
+block-buffer = "0.9"
+opaque-debug = "0.3"

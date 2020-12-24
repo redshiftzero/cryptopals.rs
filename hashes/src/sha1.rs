@@ -1,3 +1,5 @@
+use crate::util::to_hex;
+
 const STATE_LEN: usize = 5;
 const BLOCK_LEN_BITS: usize = 512;
 
@@ -260,14 +262,6 @@ impl Sha1 {
         }
         output_vec
     }
-}
-
-fn to_hex(input: &[u8]) -> String {
-    let mut s = String::new();
-    for b in input.iter() {
-        s.push_str(&*format!("{:02x}", *b));
-    }
-    s
 }
 
 #[cfg(test)]
