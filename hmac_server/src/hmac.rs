@@ -62,7 +62,7 @@ pub fn verify_hmac(key: &[u8], message: &[u8], mac: &String) -> bool {
             return result
         }
         // Sleep for 50ms for challenge 31
-        thread::sleep(time::Duration::from_millis(50));
+        thread::sleep(time::Duration::from_millis(5));
     }
     result
 }
