@@ -55,7 +55,7 @@ pub fn gen_md4_keyed_mac(key: &[u8], message: &[u8]) -> [u8; 16] {
     let mac: [u8; 16] = result
         .as_slice()
         .try_into()
-        .expect("failed to convert to [u8; 20]");
+        .expect("failed to convert to [u8; 16]");
     mac
 }
 

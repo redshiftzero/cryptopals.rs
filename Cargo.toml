@@ -5,4 +5,5 @@ members = [
     "rsa",
     "mac",
     "hashes",
+    "hmac_server",
 ]
