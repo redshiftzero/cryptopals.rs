@@ -6,4 +6,5 @@ members = [
     "mac",
     "hashes",
     "hmac_server",
+    "utils",
 ]
