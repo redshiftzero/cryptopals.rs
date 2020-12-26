@@ -2,6 +2,7 @@
 
 members = [
     "primes",
+    "diffie_hellman",
     "rsa",
     "mac",
     "hashes",
