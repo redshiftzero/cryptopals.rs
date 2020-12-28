@@ -1,6 +1,8 @@
 [workspace]
 
 members = [
+    "block_ciphers",
+    "classic_ciphers",
     "primes",
     "diffie_hellman",
     "rsa",
