@@ -9,3 +9,5 @@ edition = "2018"
 num-bigint = {version = "0.3.0", features = ["rand"] }
 rand = "0.7.3"
 primes = { path = "../primes" }
+hashes = { path = "../hashes" }
+block_ciphers = { path = "../block_ciphers" }

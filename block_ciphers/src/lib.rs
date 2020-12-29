@@ -47,7 +47,7 @@ fn pkcs7_padding(data: &[u8], block_size: usize) -> Vec<u8> {
 }
 
 #[allow(dead_code)]
-fn aes_decrypt_cbc(key: &[u8; BLOCK_SIZE], data: &[u8], iv: &[u8]) -> Vec<u8> {
+pub fn aes_decrypt_cbc(key: &[u8; BLOCK_SIZE], data: &[u8], iv: &[u8]) -> Vec<u8> {
     let key = GenericArray::from_slice(key);
     let mut result = Vec::new();
 
@@ -78,7 +78,7 @@ fn aes_decrypt_cbc(key: &[u8; BLOCK_SIZE], data: &[u8], iv: &[u8]) -> Vec<u8> {
 }
 
 #[allow(dead_code)]
-fn aes_encrypt_cbc(key: &[u8; BLOCK_SIZE], data: &[u8], iv: &[u8]) -> Vec<u8> {
+pub fn aes_encrypt_cbc(key: &[u8; BLOCK_SIZE], data: &[u8], iv: &[u8]) -> Vec<u8> {
     let key = GenericArray::from_slice(key);
     let mut result = Vec::new();
 
