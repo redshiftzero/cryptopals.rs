@@ -289,4 +289,224 @@ mod tests {
         let plaintext = bobSharedSecret.decrypt_message(&alice_to_bob_message);
         assert_eq!(plaintext, expected_plaintext);
     }
+
+    #[test]
+    fn set5_challenge35_malicious_g_1() {
+        // MITM attack where g = 1
+        let mut rng = rand::thread_rng();
+
+        // A->M: She sends legitimate p, g, A
+        let p = BigUint::parse_bytes(b"ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb9ed529077096966d670c354e4abc9804f1746c08ca237327ffffffffffffffff", 16).unwrap();
+        let g = BigUint::from(2u64);
+
+        let ZERO = BigUint::from(0u64);
+        let ONE = BigUint::from(1u64);
+        let p_minus_one = p.clone() - ONE.clone();
+        let a = DHPrivateKey(rng.gen_biguint_range(&ZERO, &p_minus_one));
+        let A = DHPublicKey(pow_mod(&g, &a.0, &p).unwrap());
+
+        let aliceSession = DiffieHellmanPendingRequest {
+            public: A.clone(),
+            p: p.clone(),
+            g: g.clone(),
+            private: a,
+        };
+        let alice_to_mitm_intro = aliceSession.to_send();
+
+        // ATTACKER: gets alice_to_mitm_intro
+        // M->B: send forward the legitimate "p", but replaces "A" and "g" with ones.
+        let mitm_to_bob_into = DiffieHellmanRequest {
+            p: alice_to_mitm_intro.p.clone(),
+            g: ONE.clone(),
+            public: DHPublicKey(ONE.clone()),
+        };
+
+        // B->M: Bob sends B (constructed using p and g given to us by the attacker).
+        let bob_p = mitm_to_bob_into.p;
+        let bob_p_minus_one = bob_p.clone() - ONE.clone();
+        let bob_g = mitm_to_bob_into.g;
+        let b = DHPrivateKey(rng.gen_biguint_range(&ZERO, &bob_p_minus_one));
+        let B = DHPublicKey(pow_mod(&bob_g, &b.0, &bob_p).unwrap());
+        let bobSession = DiffieHellmanPendingRequest {
+            public: B.clone(),
+            p: p,
+            g: g,
+            private: b,
+        };
+
+        // ATTACKER: Now has access to B and forwards it onto Alice.
+        let alice_B = B;
+
+        // What does swapping A and B out with p do to the protocol?
+        // From Alice's perspective: She has constructed $A = g^a \mod p$ using legit parameters.
+        // She derives for her shared secret K $K = (B)^a \mod p$
+        // We get: $K = B^a \mod p = (1^b)^a \mod p = 1 \mod p$
+        let aliceSharedSecret = aliceSession.derive_shared_secret(alice_B);
+        let bobSharedSecret = bobSession.derive_shared_secret(mitm_to_bob_into.public);
+        assert_eq!(aliceSharedSecret, bobSharedSecret);
+        let attackerSharedSecret = DiffieHellmanSharedSecret {
+            s: DHPrivateKey(ONE.clone()),
+        };
+        assert_eq!(aliceSharedSecret, attackerSharedSecret);
+        assert_eq!(bobSharedSecret, attackerSharedSecret);
+
+        // A->M->B message send
+        let expected_plaintext = "huehuehuehuehueh".as_bytes();
+        let alice_to_bob_message = aliceSharedSecret.encrypt_message(&expected_plaintext, &mut rng);
+
+        // Attacker can decrypt messages as they go by:
+        let attacker_p = attackerSharedSecret.decrypt_message(&alice_to_bob_message);
+        assert_eq!(attacker_p, expected_plaintext);
+
+        // B->M->A message receive
+        let plaintext = bobSharedSecret.decrypt_message(&alice_to_bob_message);
+        assert_eq!(plaintext, expected_plaintext);
+    }
+
+    #[test]
+    fn set5_challenge35_malicious_g_p() {
+        // MITM attack where g = p. A also is replaced here.
+        let mut rng = rand::thread_rng();
+
+        // A->M: She sends legitimate p, g, A
+        let p = BigUint::parse_bytes(b"ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb9ed529077096966d670c354e4abc9804f1746c08ca237327ffffffffffffffff", 16).unwrap();
+        let g = BigUint::from(2u64);
+
+        let ZERO = BigUint::from(0u64);
+        let ONE = BigUint::from(1u64);
+        let p_minus_one = p.clone() - ONE.clone();
+        let a = DHPrivateKey(rng.gen_biguint_range(&ZERO, &p_minus_one));
+        let A = DHPublicKey(pow_mod(&g, &a.0, &p).unwrap());
+
+        let aliceSession = DiffieHellmanPendingRequest {
+            public: A.clone(),
+            p: p.clone(),
+            g: g.clone(),
+            private: a,
+        };
+        let alice_to_mitm_intro = aliceSession.to_send();
+
+        // ATTACKER: gets alice_to_mitm_intro
+        // M->B: send forward the legitimate "p", but replaces "A" and "g".
+        let mitm_to_bob_into = DiffieHellmanRequest {
+            p: alice_to_mitm_intro.p.clone(),
+            g: alice_to_mitm_intro.p.clone(),
+            public: DHPublicKey(ZERO.clone()),
+        };
+
+        // B->M: Bob sends B (constructed using p and g given to us by the attacker).
+        let bob_p = mitm_to_bob_into.p.clone();
+        let bob_p_minus_one = bob_p.clone() - ONE.clone();
+        let bob_g = mitm_to_bob_into.g;
+        let b = DHPrivateKey(rng.gen_biguint_range(&ZERO, &bob_p_minus_one));
+        let B = DHPublicKey(pow_mod(&bob_g, &b.0, &bob_p).unwrap());
+        let bobSession = DiffieHellmanPendingRequest {
+            public: B.clone(),
+            p: bob_p,
+            g: bob_g,
+            private: b,
+        };
+
+        // ATTACKER: Now has access to B and simply forwards it onto Alice.
+        let alice_B = B;
+
+        // What does swapping A and B out with p do to the protocol?
+        // From Alice's perspective: She has constructed $A = g^a \mod p$ using legit parameters.
+        // She derives for her shared secret K $K = (B)^a \mod p$
+        // We get: $K = B^a \mod p = (p^b)^a \mod p = 0 \mod p$
+        // So this is similar to the challenge 34 mitm scenario.
+        let aliceSharedSecret = aliceSession.derive_shared_secret(alice_B);
+        let bobSharedSecret = bobSession.derive_shared_secret(mitm_to_bob_into.public);
+        assert_eq!(aliceSharedSecret, bobSharedSecret);
+        let attackerSharedSecret = DiffieHellmanSharedSecret {
+            s: DHPrivateKey(ZERO.clone()),
+        };
+        assert_eq!(aliceSharedSecret, attackerSharedSecret);
+        assert_eq!(bobSharedSecret, attackerSharedSecret);
+
+        // A->M->B message send
+        let expected_plaintext = "huehuehuehuehueh".as_bytes();
+        let alice_to_bob_message = aliceSharedSecret.encrypt_message(&expected_plaintext, &mut rng);
+
+        // Attacker can decrypt messages as they go by:
+        let attacker_p = attackerSharedSecret.decrypt_message(&alice_to_bob_message);
+        assert_eq!(attacker_p, expected_plaintext);
+
+        // B->M->A message receive
+        let plaintext = bobSharedSecret.decrypt_message(&alice_to_bob_message);
+        assert_eq!(plaintext, expected_plaintext);
+    }
+
+    #[test]
+    fn set5_challenge35_malicious_g_p_minus_one() {
+        // MITM attack where g = p - 1
+        let mut rng = rand::thread_rng();
+
+        // A->M: She sends legitimate p, g, A
+        let p = BigUint::parse_bytes(b"ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb9ed529077096966d670c354e4abc9804f1746c08ca237327ffffffffffffffff", 16).unwrap();
+        let g = BigUint::from(2u64);
+
+        let ZERO = BigUint::from(0u64);
+        let ONE = BigUint::from(1u64);
+        let p_minus_one = p.clone() - ONE.clone();
+        let a = DHPrivateKey(rng.gen_biguint_range(&ZERO, &p_minus_one));
+        let A = DHPublicKey(pow_mod(&g, &a.0, &p).unwrap());
+
+        let aliceSession = DiffieHellmanPendingRequest {
+            public: A.clone(),
+            p: p.clone(),
+            g: g.clone(),
+            private: a,
+        };
+        let alice_to_mitm_intro = aliceSession.to_send();
+
+        // ATTACKER: gets alice_to_mitm_intro
+        // M->B: send forward the legitimate "p", but replaces "A" and "g".
+        let mitm_to_bob_into = DiffieHellmanRequest {
+            p: alice_to_mitm_intro.p.clone(),
+            g: alice_to_mitm_intro.p.clone() - ONE.clone(),
+            public: DHPublicKey(ONE.clone()),
+        };
+
+        // B->M: Bob sends B (constructed using p and g given to us by the attacker).
+        let bob_p = mitm_to_bob_into.p.clone();
+        let bob_p_minus_one = bob_p.clone() - ONE.clone();
+        let bob_g = mitm_to_bob_into.g;
+        let b = DHPrivateKey(rng.gen_biguint_range(&ZERO, &bob_p_minus_one));
+        let B = DHPublicKey(pow_mod(&bob_g, &b.0, &bob_p).unwrap());
+        let bobSession = DiffieHellmanPendingRequest {
+            public: B.clone(),
+            p: bob_p,
+            g: bob_g,
+            private: b,
+        };
+
+        // ATTACKER: Now has access to B and simply forwards it onto Alice.
+        let alice_B = B;
+
+        // What does swapping A and B out with p do to the protocol?
+        // From Alice's perspective: She has constructed $A = g^a \mod p$ using legit parameters.
+        // She derives for her shared secret K $K = (B)^a \mod p$
+        // We get: $K = B^a \mod p = ((p - 1)^b)^a \mod p =  ((0 - 1)^b)^a \mod p = 1 \mod p$
+        let aliceSharedSecret = aliceSession.derive_shared_secret(alice_B);
+        let bobSharedSecret = bobSession.derive_shared_secret(mitm_to_bob_into.public);
+        assert_eq!(aliceSharedSecret, bobSharedSecret);
+        let attackerSharedSecret = DiffieHellmanSharedSecret {
+            s: DHPrivateKey(ONE.clone()),
+        };
+        assert_eq!(aliceSharedSecret, attackerSharedSecret);
+        assert_eq!(bobSharedSecret, attackerSharedSecret);
+
+        // A->M->B message send
+        let expected_plaintext = "huehuehuehuehueh".as_bytes();
+        let alice_to_bob_message = aliceSharedSecret.encrypt_message(&expected_plaintext, &mut rng);
+
+        // Attacker can decrypt messages as they go by:
+        let attacker_p = attackerSharedSecret.decrypt_message(&alice_to_bob_message);
+        assert_eq!(attacker_p, expected_plaintext);
+
+        // B->M->A message receive
+        let plaintext = bobSharedSecret.decrypt_message(&alice_to_bob_message);
+        assert_eq!(plaintext, expected_plaintext);
+    }
 }
