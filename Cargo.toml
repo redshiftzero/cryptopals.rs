@@ -8,6 +8,8 @@ members = [
     "rsa",
     "mac",
     "hashes",
+    "hmac",
     "hmac_server",
+    "secure_remote_password",
     "utils",
 ]

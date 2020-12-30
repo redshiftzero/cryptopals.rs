@@ -1,0 +1,15 @@
+[package]
+name = "secure_remote_password"
+version = "0.1.0"
+authors = ["redshiftzero <jen@freedom.press>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+sha2 = "0.9.2"
+num-bigint = {version = "0.3.0", features = ["rand"] }
+rand = "0.7.3"
+primes = { path = "../primes" }
+utils = {path = "../utils"}
+hmac = {path = "../hmac"}
