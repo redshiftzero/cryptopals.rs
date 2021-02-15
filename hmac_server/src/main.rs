@@ -1,9 +1,10 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 mod hmac;
 
-use hmac::{KEY, verify_hmac, hmac, OUTPUT_SIZE};
+use hmac::{hmac, verify_hmac, KEY, OUTPUT_SIZE};
 
-#[macro_use] extern crate rocket;
+#[macro_use]
+extern crate rocket;
 
 #[get("/test?<file>&<signature>")]
 fn hmac_test(file: String, signature: String) -> &'static str {
@@ -32,10 +33,10 @@ fn main() {
 #[cfg(test)]
 mod test {
     use super::rocket;
-    use rocket::local::Client;
-    use std::time::Instant;
     use crate::OUTPUT_SIZE;
+    use rocket::local::Client;
     use std::collections::HashMap;
+    use std::time::Instant;
 
     #[test]
     #[ignore]
@@ -44,15 +45,17 @@ mod test {
         let client = Client::new(rocket()).expect("valid rocket instance");
         let mut reconstructed_mac = Vec::new();
         // Test space is lowercase hex chars
-        let hex_chars = ["a", "b", "c", "d", "e", "f", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
-        for _ in 0..OUTPUT_SIZE*2 {
+        let hex_chars = [
+            "a", "b", "c", "d", "e", "f", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+        ];
+        for _ in 0..OUTPUT_SIZE * 2 {
             reconstructed_mac.push("a");
         }
 
         // Addition for challenge 32: Take multiple measurements of each character's response time
         // to reduce random error.
 
-        for i in 0..OUTPUT_SIZE*2 {
+        for i in 0..OUTPUT_SIZE * 2 {
             // We create a hash map that shows us which letter took the longest
             // time (that is the one that allowed us to move to the next byte),
             // and use that.
@@ -65,7 +68,9 @@ mod test {
                     reconstructed_mac[i] = test_char;
                     let now = Instant::now();
                     let test_sig: String = reconstructed_mac.clone().into_iter().collect();
-                    let mut _response = client.get(format!("/test?file=file&signature={}",test_sig)).dispatch();
+                    let mut _response = client
+                        .get(format!("/test?file=file&signature={}", test_sig))
+                        .dispatch();
                     vec_times.push(now.elapsed().as_millis());
                 }
                 println!("{:?}", vec_times);
@@ -88,7 +93,9 @@ mod test {
 
         // Now check we successfully reconstructed in one last request:
         let test_sig: String = reconstructed_mac.into_iter().collect();
-        let mut response = client.get(format!("/test?file=file&signature={}",test_sig)).dispatch();
+        let mut response = client
+            .get(format!("/test?file=file&signature={}", test_sig))
+            .dispatch();
         assert_eq!(response.body_string(), Some("rekt".into()));
     }
 }

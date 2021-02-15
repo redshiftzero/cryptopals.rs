@@ -1,15 +1,15 @@
 use hashes::Sha1;
 use std::{thread, time};
 
-const BLOCK_SIZE: usize = 64;  // bytes
-pub const OUTPUT_SIZE: usize = 20;   // bytes
+const BLOCK_SIZE: usize = 64; // bytes
+pub const OUTPUT_SIZE: usize = 20; // bytes
 
 /// For attack purposes
 pub const KEY: &[u8] = "muh secret key".as_bytes();
 
 /// HMAC using SHA-1 since we implemented it for a previous challenge.
 pub fn hmac(key: &[u8], message: &[u8]) -> String {
-    let mut kvec = Vec::with_capacity(BLOCK_SIZE);  // Padded key
+    let mut kvec = Vec::with_capacity(BLOCK_SIZE); // Padded key
 
     if key.len() > BLOCK_SIZE {
         let mut m = Sha1::new();
@@ -25,8 +25,8 @@ pub fn hmac(key: &[u8], message: &[u8]) -> String {
         }
     }
 
-    let mut o_key_pad = Vec::new();  // Outer padded key
-    let mut i_key_pad = Vec::new();  // Inner padded key
+    let mut o_key_pad = Vec::new(); // Outer padded key
+    let mut i_key_pad = Vec::new(); // Inner padded key
     for (a, b) in kvec[..].iter().zip(&[0x5cu8; BLOCK_SIZE]) {
         o_key_pad.push(a ^ b);
     }
@@ -59,7 +59,7 @@ pub fn verify_hmac(key: &[u8], message: &[u8], mac: &String) -> bool {
     for (a, b) in test_mac.bytes().zip(mac.as_bytes()) {
         if a != *b {
             result = false;
-            return result
+            return result;
         }
         // Sleep for 50ms for challenge 31
         thread::sleep(time::Duration::from_millis(5));

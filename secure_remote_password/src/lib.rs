@@ -4,25 +4,25 @@
 use hmac::{hmac_sha256, verify_hmac_sha256};
 use num_bigint::{BigUint, RandBigInt, ToBigUint};
 use primes::pow_mod;
-use rand::{CryptoRng, Rng};
+use rand::{CryptoRng,Rng};
 use sha2::{Digest, Sha256};
 use utils::bytes_to_hex;
 
 #[derive(Debug, Clone, PartialEq)]
 struct PrivateKey(BigUint);
 #[derive(Debug, Clone, PartialEq)]
-struct PublicKey(BigUint);
+pub struct PublicKey(pub BigUint);
 
 /// Step 0
 /// Client & Server:
 /// Agree on N=[NIST Prime], g=2, k=3, I (email), P (password)
 #[derive(Debug, Clone, PartialEq)]
-struct Parameters {
-    N: BigUint,
-    g: BigUint,
-    k: u32,
-    I: Vec<u8>,
-    P: Vec<u8>,
+pub struct Parameters {
+    pub N: BigUint,
+    pub g: BigUint,
+    pub k: u32,
+    pub I: Vec<u8>,
+    pub P: Vec<u8>,
 }
 
 /// Step 1
@@ -32,13 +32,14 @@ struct Parameters {
 /// Convert xH to integer x somehow (put 0x on hexdigest)
 /// Generate v=g**x % N
 /// Save everything but x, xH
-struct ServerProtocolSetup {
+#[derive(Clone)]
+pub struct ServerProtocolSetup {
     salt: u64,
     v: BigUint,
 }
 
 impl ServerProtocolSetup {
-    fn new<R: Rng + CryptoRng>(csprng: &mut R, params: &Parameters) -> Self {
+    pub fn new<R: Rng + CryptoRng>(csprng: &mut R, params: &Parameters) -> Self {
         let salt: u64 = csprng.gen();
 
         let mut m = Sha256::new();
@@ -59,19 +60,20 @@ impl ServerProtocolSetup {
 /// Step 2
 /// Client->Server
 /// Send I, A=g**a % N (a la Diffie Hellman)
-struct ClientLoginAttemptPendingResponse {
-    I: Vec<u8>,
-    A: PublicKey,
+pub struct ClientLoginAttemptPendingResponse {
+    pub I: Vec<u8>,
+    pub A: PublicKey,
     a: PrivateKey,
 }
 
-struct ClientLoginAttemptRequest {
-    I: Vec<u8>,
-    A: PublicKey,
+#[derive(Clone)]
+pub struct ClientLoginAttemptRequest {
+    pub I: Vec<u8>,
+    pub A: PublicKey,
 }
 
 impl ClientLoginAttemptPendingResponse {
-    fn new<R: Rng + CryptoRng>(csprng: &mut R, params: &Parameters) -> Self {
+    pub fn new<R: Rng + CryptoRng>(csprng: &mut R, params: &Parameters) -> Self {
         let ZERO = BigUint::from(0u64);
         // TODO: UNSURE IF THE UPPER RANGE HERE IS CORRECT
         let a = csprng.gen_biguint_range(&ZERO, &params.N);
@@ -84,7 +86,7 @@ impl ClientLoginAttemptPendingResponse {
         }
     }
 
-    fn to_server(&self) -> ClientLoginAttemptRequest {
+    pub fn to_server(&self) -> ClientLoginAttemptRequest {
         ClientLoginAttemptRequest {
             I: self.I.clone(),
             A: self.A.clone(),
@@ -95,19 +97,21 @@ impl ClientLoginAttemptPendingResponse {
 /// Step 3
 /// S->C
 /// Send salt, B=kv + g**b % N
-struct ServerLoginAttemptSession {
+#[derive(Clone)]
+pub struct ServerLoginAttemptSession {
     salt: u64,
-    B: PublicKey,
+    pub B: PublicKey,
     b: PrivateKey,
 }
 
-struct ServerLoginAttemptResponse {
+#[derive(Clone)]
+pub struct ServerLoginAttemptResponse {
     salt: u64,
-    B: PublicKey,
+    pub B: PublicKey,
 }
 
 impl ServerLoginAttemptSession {
-    fn new<R: Rng + CryptoRng>(
+    pub fn new<R: Rng + CryptoRng>(
         csprng: &mut R,
         params: &Parameters,
         setup: &ServerProtocolSetup,
@@ -126,7 +130,7 @@ impl ServerLoginAttemptSession {
         }
     }
 
-    fn to_client(&self) -> ServerLoginAttemptResponse {
+    pub fn to_client(&self) -> ServerLoginAttemptResponse {
         ServerLoginAttemptResponse {
             salt: self.salt.clone(),
             B: self.B.clone(),
@@ -137,12 +141,13 @@ impl ServerLoginAttemptSession {
 /// Step 4
 /// S, C
 /// Compute string uH = SHA256(A|B), u = integer of uH
-struct SharedValue {
+#[derive(Clone)]
+pub struct SharedValue {
     u: BigUint,
 }
 
 impl SharedValue {
-    fn new(A: &PublicKey, B: &PublicKey) -> Self {
+    pub fn new(A: &PublicKey, B: &PublicKey) -> Self {
         let mut m = Sha256::new();
         let mut uH_input = Vec::new();
         uH_input.extend_from_slice(&A.0.to_bytes_be());
@@ -163,12 +168,12 @@ impl SharedValue {
 /// Convert xH to integer x somehow (put 0x on hexdigest)
 /// Generate S = (B - k * g**x)**(a + u * x) % N
 /// Generate K = SHA256(S)
-struct ClientKey {
-    K: Vec<u8>,
+pub struct ClientKey {
+    pub K: Vec<u8>,
 }
 
 impl ClientKey {
-    fn new(
+    pub fn new(
         params: &Parameters,
         server_resp: &ServerLoginAttemptResponse,
         client_req: &ClientLoginAttemptPendingResponse,
@@ -211,12 +216,13 @@ impl ClientKey {
 /// S
 /// Generate S = (A * v**u) ** b % N
 /// Generate K = SHA256(S)
-struct ServerKey {
+#[derive(Clone)]
+pub struct ServerKey {
     K: Vec<u8>,
 }
 
 impl ServerKey {
-    fn new(
+    pub fn new(
         params: &Parameters,
         server_resp: &ServerLoginAttemptSession,
         client_req: &ClientLoginAttemptRequest,
@@ -242,7 +248,7 @@ impl ServerKey {
 /// C->S
 /// Send HMAC-SHA256(K, salt)
 impl ClientKey {
-    fn gen_mac(&self, server_resp: &ServerLoginAttemptResponse) -> Vec<u8> {
+    pub fn gen_mac(&self, server_resp: &ServerLoginAttemptResponse) -> Vec<u8> {
         hmac_sha256(&self.K, &server_resp.salt.to_be_bytes())
     }
 }
@@ -251,7 +257,7 @@ impl ClientKey {
 /// S->C
 /// Send "OK" if HMAC-SHA256(K, salt) validates
 impl ServerKey {
-    fn verify_mac(&self, setup: &ServerProtocolSetup, mac: &Vec<u8>) -> bool {
+    pub fn verify_mac(&self, setup: &ServerProtocolSetup, mac: &Vec<u8>) -> bool {
         verify_hmac_sha256(&self.K, &setup.salt.to_be_bytes(), mac)
     }
 }
