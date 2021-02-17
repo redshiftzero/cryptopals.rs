@@ -9,3 +9,6 @@ secure_remote_password = { path = "../secure_remote_password" }
 num-bigint = {version = "0.3.0", features = ["rand"] }
 rand = { version="0.7.3", features=["getrandom"]}
 sha2 = "0.9.2"
+primes = { path = "../primes" }
+hmac = {path = "../hmac"}
+utils = {path = "../utils"}
