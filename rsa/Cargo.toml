@@ -5,7 +5,8 @@ authors = ["redshiftzero <jen@freedom.press>"]
 edition = "2018"
 
 [dependencies]
-num-bigint = {version = "0.3.0", features = ["rand"] }
+num = "0.3.1"
+num-bigint = {version = "0.3.1", features = ["rand"] }
 primes = { path = "../primes" }
 lazy_static = "1.4.0"
 hex = "0.4.2"

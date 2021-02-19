@@ -18,17 +18,17 @@ lazy_static! {
 
 #[derive(Debug)]
 pub struct RSAPrivateKey {
-    n: BigUint,
+    pub n: BigUint,
     p: BigUint,
     q: BigUint,
-    e: BigUint,
+    pub e: BigUint,
     d: BigUint,
 }
 
 #[derive(Debug)]
 pub struct RSAPublicKey {
-    n: BigUint,
-    e: BigUint,
+    pub n: BigUint,
+    pub e: BigUint,
 }
 
 pub trait Encrypt {
@@ -54,7 +54,7 @@ fn egcd(a: BigInt, b: BigInt) -> (BigInt, BigInt, BigInt) {
     }
 }
 
-fn invmod(a: BigUint, m: BigUint) -> Result<BigUint, &'static str> {
+pub fn invmod(a: BigUint, m: BigUint) -> Result<BigUint, &'static str> {
     let (g, mut x, y) = egcd(
         a.to_bigint().expect("cant convert to bigint!"),
         m.clone().to_bigint().expect("cant convert to bigint!"),
@@ -71,7 +71,7 @@ fn invmod(a: BigUint, m: BigUint) -> Result<BigUint, &'static str> {
 }
 
 impl RSAPrivateKey {
-    fn new() -> RSAPrivateKey {
+    pub fn new() -> RSAPrivateKey {
         // We loop until we get a pair of (p-1), (n-1) for which the
         // modular inverse exists.
         loop {
@@ -102,7 +102,7 @@ impl RSAPrivateKey {
         }
     }
 
-    fn to_pubkey(&self) -> RSAPublicKey {
+    pub fn to_pubkey(&self) -> RSAPublicKey {
         RSAPublicKey {
             n: self.n.clone(),
             e: self.e.clone(),
